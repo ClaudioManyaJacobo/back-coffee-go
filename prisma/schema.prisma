@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Movie {
+  id            Int      @id @default(autoincrement())
+  tmdbId        Int      @unique
+  title         String
+  mediaType     String   // 'movie' or 'tv'
+  posterPath    String?
+  backdropPath  String?
+  overview      String?  @db.Text
+  releaseDate   String?
+  voteAverage   Float?
+  oneDriveUrl   String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Review {
+  id            Int      @id @default(autoincrement())
+  movieId       Int
+  rating        Int
+  comment       String?  @db.Text
+  createdAt     DateTime @default(now())
+}
