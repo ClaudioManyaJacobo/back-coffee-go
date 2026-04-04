@@ -8,6 +8,27 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Caché en memoria para búsquedas ──────────────────────────────────────────
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+const CACHE_MAX    = 100;
+const searchCache  = new Map();
+
+function getCached(key) {
+  const entry = searchCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) { searchCache.delete(key); return null; }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  if (searchCache.size >= CACHE_MAX) {
+    // Eliminar la entrada más antigua (primera en el Map)
+    searchCache.delete(searchCache.keys().next().value);
+  }
+  searchCache.set(key, { ts: Date.now(), data });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.use(cors());
 app.use(express.json());
 
@@ -45,6 +66,38 @@ app.get('/api/series/popular', async (req, res) => {
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Error TMDB Series' });
+  }
+});
+
+app.get('/api/search', async (req, res) => {
+  const query = req.query.q?.trim().toLowerCase();
+  const page  = req.query.page || 1;
+  if (!query) return res.status(400).json({ error: 'Falta parametro de busqueda' });
+
+  const cacheKey = `${query}:${page}`;
+  const cached = getCached(cacheKey);
+  if (cached) {
+    res.set('X-Cache', 'HIT');
+    return res.json(cached);
+  }
+
+  try {
+    const data = await tmdbService.searchMedia(query, page);
+    setCache(cacheKey, data);
+    res.set('X-Cache', 'MISS');
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Error buscar' });
+  }
+});
+
+app.get('/api/details/:type/:id', async (req, res) => {
+  const { type, id } = req.params;
+  try {
+    const data = await tmdbService.getMovieDetails(id, type);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Error cargar detalles' });
   }
 });
 
