@@ -67,7 +67,7 @@ function setCache(key, data) {
 
 // ── 6. RUTAS DE ESTADO ────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.json({ ok: true, status: 'CoffeeGo Protected API ☕', version: '1.1.0' });
+  res.json({ ok: true, status: 'GiMovie Protected API', version: '1.2.0' });
 });
 
 app.get('/api/status', (req, res) => {
@@ -198,5 +198,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 CoffeeGo API Protegida lista en puerto ${PORT}`);
+  console.log(`GiMovie API lista en puerto ${PORT}`);
 });

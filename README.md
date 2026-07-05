@@ -1,6 +1,6 @@
-# 🚀 CoffeeGo API — Backend (Express)
+# GiMovie API — Backend (Express)
 
-El motor principal de **CoffeeGo**, encargado de gestionar las peticiones a la API de TMDB, implementar caché en memoria y asegurar la protección de las llaves de acceso. Basado en **Node.js** y **Express**.
+El motor principal de **GiMovie**, encargado de gestionar las peticiones a la API de TMDB, implementar caché en memoria y asegurar la protección de las llaves de acceso. Basado en **Node.js** y **Express**.
 
 ## 🛠️ Tecnologías Utilizadas
 
@@ -61,4 +61,4 @@ El backend cuenta con un sistema de caché de 5 minutos (`CACHE_TTL_MS`) para la
 
 ---
 
-Desarrollado con ❤️ para la comunidad de **CoffeeGo**.
+Desarrollado con ❤️ para la comunidad de **GiMovie**.

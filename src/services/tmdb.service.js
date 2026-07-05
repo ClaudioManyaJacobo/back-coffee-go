@@ -36,48 +36,27 @@ const getPopularSeries = async (page = 1) => {
 };
 
 const searchMedia = async (query, page = 1) => {
-  const targetCount = 20; // Queremos devolver aproximadamente 20 resultados por página
   const p = parseInt(page);
-  const startIndex = (p - 1) * targetCount;
-  const endIndex = startIndex + targetCount;
 
-  // Calculamos las páginas de TMDB requeridas para rellenar los resultados
-  // Dado que TMDB devuelve 'person' y otros tipos no deseados por el cliente, 
-  // pedimos varias páginas en paralelo para filtrar.
-  const maxTmdbPageToFetch = Math.max(2, p + Math.ceil(p / 2));
-  const pagesToFetch = Array.from({ length: maxTmdbPageToFetch }, (_, i) => i + 1);
+  const [movieRes, tvRes] = await Promise.all([
+    tmdbApi.get('/search/movie', { params: { query, page: p } }).catch(() => null),
+    tmdbApi.get('/search/tv', { params: { query, page: p } }).catch(() => null)
+  ]);
 
-  const requests = pagesToFetch.map(pageNum =>
-    tmdbApi.get('/search/multi', { params: { query, page: pageNum } }).catch(() => null)
-  );
+  const movies = (movieRes?.data?.results ?? []).map(m => ({ ...m, media_type: 'movie' }));
+  const series = (tvRes?.data?.results ?? []).map(s => ({ ...s, media_type: 'tv' }));
 
-  const responses = await Promise.all(requests);
-
-  let validItems = []; // Solo películas (movie) y series (tv)
-  let totalTmdbPages = 1;
-
-  for (const response of responses) {
-    if (response && response.data) {
-      totalTmdbPages = Math.max(totalTmdbPages, response.data.total_pages);
-      const filtered = response.data.results.filter(item => item.media_type === 'movie' || item.media_type === 'tv');
-      filtered.forEach(f => {
-        // Evitar duplicados si aparecen en diferentes páginas
-        if (!validItems.find(vi => vi.id === f.id && vi.media_type === f.media_type)) {
-          validItems.push(f);
-        }
-      });
-    }
+  const results = [];
+  const maxLen = Math.max(movies.length, series.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (movies[i]) results.push(movies[i]);
+    if (series[i]) results.push(series[i]);
   }
-
-  const paginatedResults = validItems.slice(startIndex, endIndex);
-
-  // Estimación del total de páginas útil tras el filtrado (~15% son personas)
-  const estimatedTotalPages = Math.max(1, Math.ceil(totalTmdbPages * 0.85));
 
   return {
     page: p,
-    results: paginatedResults,
-    total_pages: estimatedTotalPages
+    results,
+    total_pages: Math.max(movieRes?.data?.total_pages ?? 1, tvRes?.data?.total_pages ?? 1)
   };
 };
 
