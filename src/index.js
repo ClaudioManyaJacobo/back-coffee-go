@@ -141,8 +141,31 @@ app.get('/api/search', async (req, res, next) => {
   if (cached) return res.json({ ok: true, ...cached });
 
   try {
-    const data = await tmdbService.searchMedia(query, page);
+    const data = await tmdbService.searchMulti(query, page);
     setCache(cacheKey, data);
+    res.json({ ok: true, ...data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Sugerencias en tiempo real (autocomplete)
+app.get('/api/suggestions', async (req, res, next) => {
+  const query = (req.query.q || '').toString().trim().slice(0, 100);
+
+  if (!query) return res.status(400).json({ ok: false, message: 'La consulta no puede estar vacía.' });
+
+  const cacheKey = `suggestions:${query.toLowerCase()}`;
+  const cached = getCached(cacheKey);
+  if (cached) {
+    res.set('Cache-Control', 'public, max-age=300');
+    return res.json({ ok: true, ...cached });
+  }
+
+  try {
+    const data = await tmdbService.searchSuggestions(query);
+    setCache(cacheKey, data);
+    res.set('Cache-Control', 'public, max-age=300');
     res.json({ ok: true, ...data });
   } catch (error) {
     next(error);

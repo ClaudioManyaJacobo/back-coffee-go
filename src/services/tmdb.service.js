@@ -5,10 +5,12 @@ dotenv.config();
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const LANGUAGE = process.env.LANGUAGE;
+const TMDB_TIMEOUT = 4000;
 
 // Configuración global de la instancia de axios para TMDB
 const tmdbApi = axios.create({
   baseURL: TMDB_BASE_URL,
+  timeout: TMDB_TIMEOUT,
   params: {
     api_key: TMDB_API_KEY,
     language: LANGUAGE
@@ -33,31 +35,6 @@ const getPopularMovies = async (page = 1) => {
 const getPopularSeries = async (page = 1) => {
   const { data } = await tmdbApi.get('/tv/popular', { params: { page } });
   return data;
-};
-
-const searchMedia = async (query, page = 1) => {
-  const p = parseInt(page);
-
-  const [movieRes, tvRes] = await Promise.all([
-    tmdbApi.get('/search/movie', { params: { query, page: p } }).catch(() => null),
-    tmdbApi.get('/search/tv', { params: { query, page: p } }).catch(() => null)
-  ]);
-
-  const movies = (movieRes?.data?.results ?? []).map(m => ({ ...m, media_type: 'movie' }));
-  const series = (tvRes?.data?.results ?? []).map(s => ({ ...s, media_type: 'tv' }));
-
-  const results = [];
-  const maxLen = Math.max(movies.length, series.length);
-  for (let i = 0; i < maxLen; i++) {
-    if (movies[i]) results.push(movies[i]);
-    if (series[i]) results.push(series[i]);
-  }
-
-  return {
-    page: p,
-    results,
-    total_pages: Math.max(movieRes?.data?.total_pages ?? 1, tvRes?.data?.total_pages ?? 1)
-  };
 };
 
 const getMovieDetails = async (id, type = 'movie') => {
@@ -93,12 +70,35 @@ const getSeasonDetails = async (id, seasonNumber) => {
   return data;
 };
 
+const searchMulti = async (query, page = 1) => {
+  const p = parseInt(page);
+  const { data } = await tmdbApi.get('/search/multi', { params: { query, page: p } });
+  const results = (data.results ?? [])
+    .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+    .slice(0, 20);
+  return {
+    page: data.page ?? p,
+    results,
+    total_pages: data.total_pages ?? 1,
+    total_results: data.total_results ?? 0
+  };
+};
+
+const searchSuggestions = async (query) => {
+  const { data } = await tmdbApi.get('/search/multi', { params: { query, page: 1 } });
+  const results = (data.results ?? [])
+    .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+    .slice(0, 8);
+  return { results, total_results: data.total_results ?? 0 };
+};
+
 module.exports = {
   getTrendingMovies,
   getTrendingSeries,
   getPopularMovies,
   getPopularSeries,
-  searchMedia,
+  searchMulti,
+  searchSuggestions,
   getMovieDetails,
   getSeasonDetails
 };
