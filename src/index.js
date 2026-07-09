@@ -29,7 +29,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // ── 3. CONFIGURACIÓN DE CORS ──────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200').split(',').map(o => o.trim());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200,https://coffee-go-front.vercel.app,https://gimovie.vercel.app').split(',').map(o => o.trim());
 app.use(cors({
   origin: (origin, callback) => {
     // Permitir peticiones sin origen (ej: curl, postman en dev) o de orígenes permitidos
