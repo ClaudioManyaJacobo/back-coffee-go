@@ -10,6 +10,7 @@ const tmdbService = require('./services/tmdb.service');
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', true); // Render está detrás de proxy — necesario para rate-limiter
 const PORT = process.env.PORT || 3000;
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
@@ -29,7 +30,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // ── 3. CONFIGURACIÓN DE CORS ──────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200,https://coffee-go-front.vercel.app,https://gimovie.vercel.app').split(',').map(o => o.trim());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200,https://coffee-go-gamma.vercel.app').split(',').map(o => o.trim());
 app.use(cors({
   origin: (origin, callback) => {
     // Permitir peticiones sin origen (ej: curl, postman en dev) o de orígenes permitidos
